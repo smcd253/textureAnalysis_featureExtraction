@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#sh gitHelper "[insert message here]"
 git pull
 git add .
 git commit -am $0
