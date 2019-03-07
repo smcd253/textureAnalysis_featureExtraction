@@ -55,20 +55,26 @@ int reflectX(int width, int j, int nw)
 /*************************************************************************************************************************************************/
 float buildFeatureVector(int **image_minusMean, int height, int width, int k)
 {
-	int filteredImage[width][height];
+	int filteredImage[height][width];
 	int energySum = 0;
 	
 	// loop over entire image
-	for(int i=0; i<width; i++)
+	for(int i = 0; i < height; i++)
 	{
-		for(int j=0; j<height; j++)
+		for(int j = 0; j < width; j++)
 		{
+			//printf("fail at location {%d,%d}\n", i, j);
 			// loop through filter variations
 			for (int m = 0; m < 5; m++)
 			{	
 				for (int n = 0; n < 5; n++)
 				{
-					filteredImage[i][j] += filter_bank[k][m][n] * image_minusMean[reflectX(width, i, m)][reflectY(height, j, n)];
+					// printf("fail at filter [%d,%d]\n", m, n);
+					// printf("reflectX(width,%d,%d) = %d\n", j, n, reflectX(width, j , n));
+					// printf("reflectY(height,%d,%d) = %d\n", i, m, reflectY(height, i , m));
+					// printf("filterBank[%d][%d][%d] = %d\n", k, m, n, filter_bank[k][m][n]);
+					// printf("image_minusMean[%d][%d] = %d\n", reflectY(height, i, n), reflectX(width, j, m), *(((int *)image_minusMean + i * width) + j));
+					filteredImage[i][j] += filter_bank[k][m][n] * (*(((int *)image_minusMean + i * width) + j));
 				}
 			}
 			energySum += filteredImage[i][j]*filteredImage[i][j];
@@ -95,7 +101,6 @@ int main(int argc, char *argv[])
 	fclose(file);
 
 
-    // add together pixel values to find average pixel value for input image
     float featureVector[12][25]={0.0};
 	float featureVector_6[6][25]={0.0};
 	float kmean_center_old[4][25]={0.0};
@@ -110,13 +115,10 @@ int main(int argc, char *argv[])
 								
 	float kmean_center_old3d[4][3]={0.0};
 	float kmean_center_new3d[4][3]={0.0};
-	
-	
-	float energy_sum=0;
-	
 
+    // add together pixel values to find average pixel value for input image
 	// throw image into int array
-	int image_minusMean[width][height];
+	int image_minusMean[height][width];
 
 	for(int i=0; i<width; i++)
 		for(int j=0; j<height; j++)
@@ -126,53 +128,55 @@ int main(int argc, char *argv[])
 	float pixelSum = 0;
 	int imageMean = 0;
 
-	for(int i=0; i<width; i++)
-		for(int j=0; j<height; j++)
+	for(int i = 0; i < height; i++)
+		for(int j = 0; j < width; j++)
 			pixelSum += (float)sourceImageData[i][j];
 
 	// mean
     imageMean = (int)(pixelSum/(height*width));
 
 	// subtract mean from each pixel
-	for(int i=0; i<width+4; i++)
-		for(int j=0; j<height+4; j++)
+	for(int i = 0; i < height; i++)
+		for(int j = 0; j < width; j++)
 			image_minusMean[i][j] -= imageMean;
 
+	//printf("image_minusMean built\n");
 	// build the feature vector of input image for each filter
-	for(int k=0; k<25; k++)
-	{
+	for(int k = 0; k < 25; k++)
+	{	
+		//printf("got to filter %d\n", k);
 		featureVector[0][k] = buildFeatureVector((int **)image_minusMean, height, width, k);
 	}
 
-    for(int j=0; j<25; j++)
-			printf("featureVector[0][%d] = %f\n", j, featureVector[0][j]);
+	// print for debugging
+    for(int f = 0; f < 25; f++)
+			printf("featureVector[0][%d] = %f\n", f, featureVector[0][f]);
     
 
-    /****************************************normal feature vector******************************************/
+	// // normalize feature vector
 	// float featureVector_max[25] = {0};
-	// for(int j=0; j<25; j++)
+	// for(int f = 0; f < 25; f++)
 	// {
-	// 	featureVector_max[j] = featureVector[0][j];
-	// 	for(int i=1; i<12; i++)
+	// 	featureVector_max[f] = featureVector[0][f];
+	// 	for(int h = 0; h < 12; h++)
 	// 	{
-	// 		if(featureVector_max[j]<featureVector[i][j])
-	// 			featureVector_max[j] = featureVector[i][j];
+	// 		if(featureVector_max[f] < featureVector[h][f])
+	// 			featureVector_max[f] = featureVector[h][f];
 	// 	}
 	// }
-
-	// for(int i=0; i<12; i++)
+	// for(int i = 0; i < 12; i++)
 	// {
-	// 	for(int j=0; j<25; j++)
+	// 	for(int j = 0; j < 25; j++)
 	// 		featureVector[i][j] = featureVector[i][j]/featureVector_max[j];
 	// }
 
-/*
-	for(int i=0; i<12; i++)
-	{
-		for(int j=0; j<25; j++)
-			cout << featureVector[i][j] << ",";
-		cout << endl;
-	}
-	cout << endl;*/
+	// // print for debugging
+	// for(int i = 0; i < 12; i++)
+	// {
+	// 	printf("featureVector[%d] = {", i);
+	// 	for(int j = 0; j < 25; j++)
+	// 		printf("%f,", featureVector[i][j]);
+	// }
+	// printf("\n");
 	return 0;
 }
